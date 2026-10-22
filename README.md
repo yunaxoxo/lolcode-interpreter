@@ -3,7 +3,7 @@
 An interpreter for LOLCODE, written in Python.
 
 ## Status
-- [x] Lexer (in progress)
+- [x] Lexer
 - [ ] Parser
 - [ ] Interpreter
 - [ ] Frontend
