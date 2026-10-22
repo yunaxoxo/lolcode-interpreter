@@ -4,7 +4,7 @@ An interpreter for LOLCODE, written in Python.
 
 ## Status
 - [x] Lexer
-- [ ] Parser
+- [x] Parser
 - [ ] Interpreter
 - [ ] Frontend
 
