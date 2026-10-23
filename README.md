@@ -5,18 +5,43 @@ An interpreter for LOLCODE, written in Python.
 ## Status
 - [x] Lexer
 - [x] Parser
-- [ ] Interpreter
+- [x] Initial command-line interpreter (still in development)
 - [x] Initial frontend (editor, tokens, syntax tree)
 
-## Usage
-python3 lexer.py
+## Requirements
+
+Python 3 with the standard library. No additional packages are required.
+
+## Command-line usage
+
+Run the included sample program:
+
+```sh
+python3 -B interpreter.py source.txt
+```
+
+You can replace `source.txt` with the path to your own LOLCODE file. Running
+without a filename also uses `source.txt`. The sample prompts for input near
+the end through `GIMMEH`.
+
+The initial interpreter implements variables, assignments, typecasts,
+arithmetic and Boolean expressions, comparisons, string concatenation,
+console input/output, conditionals, switches, loops, and function calls.
+It is still in development; full LOLCODE compatibility is not yet verified.
+
+To inspect the sample's tokens or syntax tree separately:
+
+```sh
+python3 -B lexer.py
+python3 -B parser.py
+```
 
 ## Web workbench
 
 Start the local frontend with Python (no additional packages needed):
 
 ```sh
-python -B app.py
+python3 -B app.py
 ```
 
 Open http://127.0.0.1:8000 in your browser. Stop the server with Ctrl+C.
@@ -26,12 +51,19 @@ Open http://127.0.0.1:8000 in your browser. Stop the server with Ctrl+C.
 - Inspect the token table and syntax tree, or read lexer/parser errors.
 - Open a `.lol` or `.txt` file, and save your editor contents as `playground.lol`.
 
-The workbench uses the existing Python lexer and parser. It checks syntax;
-it does not execute programs yet. Keep a saved copy of your code before
+The workbench uses the Python lexer and parser. It checks syntax;
+program execution is currently available through the command-line interpreter.
+Keep a saved copy of your code before
 closing or refreshing the page. The server listens on localhost for local use.
 
 Run the frontend API checks with:
 
 ```sh
-python -B -m unittest test_app.py
+python3 -B -m unittest test_app.py
 ```
+
+## Repository housekeeping
+
+`.gitignore` excludes Python caches, virtual environments, build output,
+local environment files, and operating system metadata. Keep source code,
+sample programs, tests, and documentation under version control.
