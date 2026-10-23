@@ -3,45 +3,52 @@
 Run: python interpreter.py source.txt
 """
 
+# Imports and dependencies
 import sys
 from lexer import tokenize
-from parser import (
+from parser import ( # Imports all AST nodes classes
     Parser, Program, VariableSection, Declaration, Assignment,
     TypecastStmt, TypecastExpr, PrintStmt, InputStmt, Conditional, Switch,
     Loop, FuncDef, FuncCall, Return, Break, Literal, VarRef, Comment,
     ArithExpr, BoolExpr, NotExpr, InfiniteBool, CompareExpr, Concatenation,
 )
 
+# These signals tell the interpreter to stop executing a particular block
 
-class ReturnSignal(Exception):
+class ReturnSignal(Exception): # When FOUND YR is encountered, ReturnSignal is raised with the resulting value 
     def __init__(self, value):
         self.value = value
 
 
-class BreakSignal(Exception):
+class BreakSignal(Exception): # Exits a loop
     pass
 
 
 class Interpreter:
     def __init__(self, input_func=input, output_func=print):
-        self.scopes = [{"IT": None}]
-        self.functions = {}
+        self.scopes = [{"IT": None}] # Where variables are stored
+                                     # "IT" stores the result of the most recent relevant expression or operation
+        self.functions = {} # Stores function definitions
+                            # e.g. self.functions["PRE_ADD"] = function_definition
         self.input = input_func
         self.output = output_func
 
-    @property
+    @property # Combines the variables in all scopes into one dictionary
     def variables(self):
         result = {}
         for scope in self.scopes:
             result.update(scope)
         return result
 
+    # This searches for a variable and returns its value
     def get(self, name):
+        # reversed() call searches the most recently added scope first
         for scope in reversed(self.scopes):
             if name in scope:
                 return scope[name]
         raise RuntimeError(f"Undefined variable: {name}")
 
+    # This updates the value if it already exists, if not then it creates in the innermost scope
     def set(self, name, value):
         for scope in reversed(self.scopes):
             if name in scope:
@@ -49,6 +56,7 @@ class Interpreter:
                 return
         self.scopes[-1][name] = value
 
+    # This converts a value to a Boolean
     def truth(self, value):
         if value is None:
             return False
@@ -56,6 +64,7 @@ class Interpreter:
             return value != 0
         return value != ""
 
+    # This converts a value to a numbers for arithmetic operations
     def number(self, value):
         if value is None:
             return 0
@@ -69,6 +78,7 @@ class Interpreter:
         except ValueError:
             raise RuntimeError(f"Cannot convert {value!r} to a number.")
 
+    # Display the LOLCODE intepretation
     def display(self, value):
         if value is None:
             return "NOOB"
@@ -78,6 +88,7 @@ class Interpreter:
             return "FAIL"
         return str(value)
 
+    # This handles the type target, and raises an exception when there is an unknown type
     def cast(self, value, target):
         target = target.upper()
         if target == "NOOB":
@@ -102,6 +113,7 @@ class Interpreter:
             return "YARN"
         raise RuntimeError(f"Unknown type: {target}")
 
+    # This produces the values of the expressions
     def evaluate(self, node):
         if isinstance(node, Literal):
             value = node.value
@@ -160,10 +172,12 @@ class Interpreter:
         self.set("IT", value)
         return value
 
+    # A list of statements
     def block(self, statements):
         for statement in statements:
             self.execute(statement)
 
+    # This runs the statements
     def execute(self, node):
         if node is None or isinstance(node, Comment):
             return
@@ -247,6 +261,7 @@ class Interpreter:
         else:
             self.evaluate(node)
 
+    # This calls the function
     def call(self, call):
         if call.name not in self.functions:
             raise RuntimeError(f"Undefined function: {call.name}")
@@ -263,11 +278,12 @@ class Interpreter:
             except ReturnSignal as result:
                 return result.value
             except BreakSignal:
-                pass  # GTFO exits a function in this parser's language rules.
+                pass  # GTFO exits a function in this parser's language rules
             return self.get("IT")
         finally:
             self.scopes.pop()
 
+    # These connect the lexer, parser, and interpreter
     def run_source(self, source):
         return self.execute(Parser(tokenize(source)).parse())
 
