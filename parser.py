@@ -20,6 +20,12 @@ COMPARISON_OPERATORS = {
     "BOTH_SAEM", "DIFFRINT"
 }
 
+# Build this once instead of checking every operator group for each value.
+EXPRESSION_STARTERS = (
+    ARITHMETIC_OPERATORS | BOOLEAN_OPERATORS | INFINITE_OPERATORS
+    | COMPARISON_OPERATORS | {"SMOOSH", "MAEK", "NOT"}
+)
+
 LITERAL_TYPES = {
     "NUMBR", "NUMBAR", "YARN", "TROOF", "TYPE", "NOOB"
 }
@@ -302,7 +308,7 @@ class Parser:
             return False
         if token[0] in LITERAL_TYPES or token[0] in ("I_IZ", "NOT", "SMOOSH", "MAEK"):
             return True
-        if token[0] in ARITHMETIC_OPERATORS or token[0] in BOOLEAN_OPERATORS or token[0] in COMPARISON_OPERATORS or token[0] in INFINITE_OPERATORS:
+        if token[0] in EXPRESSION_STARTERS:
             return True
         if self.is_identifier_token():
             if token[1] in STATEMENT_KEYWORDS or token[1] in BLOCK_END_KEYWORDS:
@@ -328,14 +334,11 @@ class Parser:
         body = self.parse_program_body()
         self.consume("KTHXBYE")
         self.skip_newlines()
-        post_funcs = []
         while self.check("HOW_IZ_I"):
-            post_funcs.append(self.parse_function_definition())
+            pre_funcs.append(self.parse_function_definition())
             self.skip_newlines()
-        #then consolidate all function definitions strictly from outside HAI...KTHXBYE
-        all_funcs = list(pre_funcs) + post_funcs
 
-        return Program(body=body, functions=all_funcs)
+        return Program(body=body, functions=pre_funcs)
     #<program-body> ::= <statement-list> | empty/ future lexeme
     def parse_program_body(self) -> List[Any]:
         return self.parse_statement_list()
@@ -383,7 +386,8 @@ class Parser:
             return self.parse_declaration()
         #identifiers
         if self.is_identifier_token():
-            offset = 2 if (token[0] in ("R", "A") and self.peek(1) and self.peek(1)[0] == "IDENTIFIER") else 1
+            # is_identifier_token() already checked the second token.
+            offset = 2 if token[0] in ("R", "A") else 1
             next_token = self.peek(offset)
             if next_token and next_token[0] == "R":
                 return self.parse_assignment()
@@ -414,9 +418,7 @@ class Parser:
         if token[0] in ("BTW", "OBTW") or token[1] in ("BTW", "OBTW"):
             return self.parse_comment()
         #expression statements evaluated for side effects
-        if (token[0] in ARITHMETIC_OPERATORS or token[0] in BOOLEAN_OPERATORS or
-                token[0] in COMPARISON_OPERATORS or token[0] in INFINITE_OPERATORS or
-                token[0] in ("SMOOSH", "MAEK", "NOT")):
+        if token[0] in EXPRESSION_STARTERS:
             return self.parse_expression()
         raise SyntaxError(f"Line {token[2]}: Unexpected token '{token[1]}' ({token[0]})")
     
@@ -431,12 +433,14 @@ class Parser:
     #<declaration-list> ::= <declaration> NEWLINE <declaration-list> | <declaration> NEWLINE | empty
     def parse_declaration_list(self) -> List[Declaration]:
         declarations = []
+        self.skip_newlines()
         while not self.is_at_end():
             token = self.peek()
             if not token or token[0] == "BUHBYE" or token[1] == "BUHBYE":
                 break
-            if self.check("I_HAS_A"):
-                declarations.append(self.parse_declaration())
+            # Always consume a declaration or raise an error. Skipping only
+            # newlines would loop forever on an unexpected token here.
+            declarations.append(self.parse_declaration())
             self.skip_newlines()
         return declarations
     #<declaration> ::= I_HAS_A IDENTIFIER | I_HAS_A IDENTIFIER ITZ <value>
@@ -468,7 +472,7 @@ class Parser:
     #<print-list> ::= <value> | <value> <print-list>
     def parse_print_list(self) -> List[Any]:
         values = [self.parse_value()]
-        while self.can_start_value() and not self.check("NEWLINE", "COMMA", "EXCLAMATION"):
+        while self.can_start_value():
             values.append(self.parse_value())
         return values
     #<input> ::= GIMMEH IDENTIFIER
@@ -651,9 +655,7 @@ class Parser:
         if token[0] == "I_IZ":
             return self.parse_function_call()
 
-        if (token[0] in ARITHMETIC_OPERATORS or token[0] in BOOLEAN_OPERATORS or
-                token[0] in COMPARISON_OPERATORS or token[0] in INFINITE_OPERATORS or
-                token[0] in ("SMOOSH", "MAEK", "NOT")):
+        if token[0] in EXPRESSION_STARTERS:
             return self.parse_expression()
 
         if self.is_identifier_token():
